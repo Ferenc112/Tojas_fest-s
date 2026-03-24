@@ -4,6 +4,7 @@ const torlesGomb = document.getElementById('torles_gomb');
 const tojasValtoGomb = document.getElementById('tojas_valto');
 const paletta = document.getElementById('paletta');
 const selectedColorLabel = document.getElementById('selectedColor');
+const mentesGomb = document.getElementById('mentes');
 
 let selectedColor = '#f44336';
 let eggItems = [];
@@ -114,6 +115,59 @@ function createPalette() {
 szinezesGomb.addEventListener('click', fillEgg);
 torlesGomb.addEventListener('click', clearEgg);
 tojasValtoGomb.addEventListener('click', randomizeEgg);
+mentesGomb.addEventListener('click', saveEggAsImage);
+
+function saveEggAsImage() {
+    const svg = rajzSzinezes.querySelector('svg');
+    if (!svg) {
+        alert('Nincs menthető tojás, először csinálj egyet.');
+        return;
+    }
+
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svg);
+
+    if (!source.includes('xmlns="http://www.w3.org/2000/svg"')) {
+        source = source.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+    }
+
+    const svgBlob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+    img.onload = () => {
+        const width = parseInt(svg.getAttribute('width')) || 360;
+        const height = parseInt(svg.getAttribute('height')) || 420;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        URL.revokeObjectURL(url);
+
+        const pngDataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = pngDataUrl;
+        link.download = 'tojas.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    img.onerror = () => {
+        URL.revokeObjectURL(url);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'tojas.svg';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    img.src = url;
+}
 
 createPalette();
 clearEgg();
